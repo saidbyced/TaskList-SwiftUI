@@ -9,26 +9,39 @@
 import SwiftUI
 
 struct ContentView: View {
-    var taskStore: TaskStore
+    @ObservedObject var taskStore: TaskStore
+    
     @State var modalIsPresented = false
     
     var body: some View {
         NavigationView {
-            List(taskStore.tasks) { task in
-                Text(task.name)
-            }
-        .navigationBarTitle("Tasks")
-        .navigationBarItems(
-            trailing:
-                Button(
-                    action: { self.modalIsPresented = true }
-                ) {
-                        Image(systemName: "plus")
+            List {
+                ForEach(taskStore.tasks) { task in
+                    Text(task.name)
                 }
-            )
+                .onMove { sourceIndices, destinationIndex in
+                    self.taskStore.tasks.move(
+                        fromOffsets: sourceIndices,
+                        toOffset: destinationIndex
+                    )
+                }
+                .onDelete { indexSet in
+                    self.taskStore.tasks.remove(atOffsets: indexSet)
+                }
+            }
+            .navigationBarTitle("Tasks")
+            .navigationBarItems(
+                leading: EditButton(),
+                trailing:
+                    Button(
+                            action: { self.modalIsPresented = true }
+                        ) {
+                            Image(systemName: "plus")
+                        }
+                    )
         }
         .sheet(isPresented: $modalIsPresented) {
-            NewTaskView()
+            NewTaskView( taskStore: self.taskStore )
         }
     }
 }
